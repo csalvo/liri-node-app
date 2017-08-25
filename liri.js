@@ -1,6 +1,9 @@
 var keys = require('./keys.js');
 var twitter = require('twitter');
 var spotify = require('node-spotify-api');
+var request = require("request");
+var fs = require("fs");
+
 
 var twitCient = new twitter(keys.twitterKeys);
 var spotClient = new spotify(keys.spotifyKeys);
@@ -10,6 +13,8 @@ switch (process.argv[2]) {
         myTweets();
     case "spotify-this-song":
         spotifyStuff();
+    case "movie-this":
+    		getMovieInfo();
 }
 
 
@@ -70,4 +75,33 @@ function spotifyStuff() {
 
         }
     });
+}
+function getMovieInfo(){
+	  var userMovieQuery = process.argv[3];
+    if (userMovieQuery) {
+        for (var i = 4; i < process.argv.length; i++) {
+            userMovieQuery = userMovieQuery + "+" + process.argv[i];
+        }
+    } else {
+        userMovieQuery = "Mr.Nobody";
+    }
+request("http://www.omdbapi.com/?t=" + userMovieQuery + "&y=&plot=short&apikey=40e9cece", function(error, response, body) {
+  // If the request is successful (i.e. if the response status code is 200)
+  if (!error && response.statusCode === 200) {
+    // Parse the body of the site and recover just the imdbRating
+    // (Note: The syntax below for parsing isn't obvious. Just spend a few moments dissecting it).
+    console.log("Title: " + JSON.parse(body).Title);
+    console.log("Year: " + JSON.parse(body).Year);
+    console.log("IMDB Rating: " + JSON.parse(body).Ratings[0].Value);
+    console.log("Rotten Tomatoes Rating: " + JSON.parse(body).Ratings[1].Value);
+    console.log("Production Country: " + JSON.parse(body).Country);
+    console.log("Language: " + JSON.parse(body).Language);
+    console.log("Plot: " + JSON.parse(body).Plot);
+    console.log("Actors: " + JSON.parse(body).Actors);
+    console.log("-------------------------------");
+ 
+
+  }
+});
+
 }
