@@ -5,16 +5,35 @@ var request = require("request");
 var fs = require("fs");
 
 
-var twitCient = new twitter(keys.twitterKeys);
+var twitClient = new twitter(keys.twitterKeys);
 var spotClient = new spotify(keys.spotifyKeys);
+var command = process.argv[2];
 
-switch (process.argv[2]) {
-    case "my-tweets":
-        myTweets();
-    case "spotify-this-song":
-        spotifyStuff();
-    case "movie-this":
-    		getMovieInfo();
+if (command === "my-tweets") {
+    myTweets();
+} else if (command === "spotify-this-song") {
+    var songQuery = process.argv[3];
+    if (songQuery) {
+        for (var i = 4; i < process.argv.length; i++) {
+            songQuery = songQuery + " " + process.argv[i];
+        }
+    } else if (!songQuery) {
+        songQuery = "The Sign";
+    }
+    spotifyStuff(songQuery);
+} else if (command === "movie-this") {
+    var movieQuery = process.argv[3];
+
+    if (movieQuery) {
+        for (var i = 4; i < process.argv.length; i++) {
+            movieQuery = movieQuery + "+" + process.argv[i];
+        }
+    } else {
+        movieQuery = "Mr.Nobody";
+    }
+    getMovieInfo(movieQuery);
+} else if (command === "do-what-it-says") {
+    doWhatItSays();
 }
 
 
@@ -39,16 +58,7 @@ function myTweets() {
 }
 
 //spotify
-function spotifyStuff() {
-
-    var userQuery = process.argv[3];
-    if (userQuery) {
-        for (var i = 4; i < process.argv.length; i++) {
-            userQuery = userQuery + " " + process.argv[i];
-        }
-    } else {
-        userQuery = "The Sign";
-    }
+function spotifyStuff(userQuery) {
 
     console.log("Here is info for the song: " + userQuery);
     console.log("--------------------------------------------");
@@ -76,32 +86,46 @@ function spotifyStuff() {
         }
     });
 }
-function getMovieInfo(){
-	  var userMovieQuery = process.argv[3];
-    if (userMovieQuery) {
-        for (var i = 4; i < process.argv.length; i++) {
-            userMovieQuery = userMovieQuery + "+" + process.argv[i];
-        }
-    } else {
-        userMovieQuery = "Mr.Nobody";
-    }
-request("http://www.omdbapi.com/?t=" + userMovieQuery + "&y=&plot=short&apikey=40e9cece", function(error, response, body) {
-  // If the request is successful (i.e. if the response status code is 200)
-  if (!error && response.statusCode === 200) {
-    // Parse the body of the site and recover just the imdbRating
-    // (Note: The syntax below for parsing isn't obvious. Just spend a few moments dissecting it).
-    console.log("Title: " + JSON.parse(body).Title);
-    console.log("Year: " + JSON.parse(body).Year);
-    console.log("IMDB Rating: " + JSON.parse(body).Ratings[0].Value);
-    console.log("Rotten Tomatoes Rating: " + JSON.parse(body).Ratings[1].Value);
-    console.log("Production Country: " + JSON.parse(body).Country);
-    console.log("Language: " + JSON.parse(body).Language);
-    console.log("Plot: " + JSON.parse(body).Plot);
-    console.log("Actors: " + JSON.parse(body).Actors);
-    console.log("-------------------------------");
- 
 
-  }
-});
+//movies
+function getMovieInfo(userQuery) {
+
+    request("http://www.omdbapi.com/?t=" + userQuery + "&y=&plot=short&apikey=40e9cece", function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            console.log("Title: " + JSON.parse(body).Title);
+            console.log("Year: " + JSON.parse(body).Year);
+            console.log("IMDB Rating: " + JSON.parse(body).Ratings[0].Value);
+            console.log("Rotten Tomatoes Rating: " + JSON.parse(body).Ratings[1].Value);
+            console.log("Production Country: " + JSON.parse(body).Country);
+            console.log("Language: " + JSON.parse(body).Language);
+            console.log("Plot: " + JSON.parse(body).Plot);
+            console.log("Actors: " + JSON.parse(body).Actors);
+            console.log("-------------------------------");
+
+
+        }
+    });
+}
+
+//do what it says read file
+function doWhatItSays() {
+    fs.readFile("random.txt", "utf8", function(error, data) {
+            if (error) {
+                return console.log(error);
+            }
+            dataArray = data.split(",");
+            var doWhatItSaysCommand = dataArray[0];
+            var doWhatItSaysQuery = dataArray[1];
+            if (doWhatItSaysCommand === "my-tweets") {
+                myTweets();
+            } else if (doWhatItSaysCommand === "spotify-this-song") {
+                spotifyStuff(doWhatItSaysQuery);
+
+            } else if (doWhatItSaysCommand === "movie-this") {
+                getMovieInfo(doWhatItSaysQuery);
+
+            }
+
+    });
 
 }
